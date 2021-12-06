@@ -2,12 +2,16 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using SchoolApp.Data;
 using SchoolApp.Data.Models;
 using SchoolApp.Data.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SchoolApp.Controllers
@@ -74,9 +78,45 @@ namespace SchoolApp.Controllers
 			var userExists = await _userManager.FindByEmailAsync(model.EmailAddress);
 			if (userExists != null && await _userManager.CheckPasswordAsync(userExists,model.Password))
 			{
-				return Ok("User signed in");
+				var tokenValue = await GenerateTokenAsync(userExists);
+
+				return Ok(tokenValue);
 			}
 			return Unauthorized();
+		}
+
+		private async Task<AuthResultVM> GenerateTokenAsync(ApplicationUser user)
+		{
+			var authClaims = new List<Claim>() 
+			{
+				new Claim(ClaimTypes.Name,user.UserName),
+				new Claim(ClaimTypes.NameIdentifier,user.Id),
+				new Claim(JwtRegisteredClaimNames.Email,user.Email),
+				new Claim(JwtRegisteredClaimNames.Sub,user.Email),
+				new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString())
+			};
+
+			var authSignInKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["JWT:Secret"]));
+
+			// defining actual token
+			var token = new JwtSecurityToken(
+				issuer: _configuration["JWT:Issuer"],
+				audience: _configuration["JWT:Audience"],
+				expires: DateTime.UtcNow.AddMinutes(1),
+				claims:authClaims,
+				signingCredentials:new SigningCredentials(authSignInKey,SecurityAlgorithms.HmacSha256));
+
+			// generate JWT token
+			var jwtToken = new JwtSecurityTokenHandler().WriteToken(token);
+
+			var response = new AuthResultVM()
+			{
+				Token = jwtToken,
+				ExpireAt = token.ValidTo
+			};
+
+			return response;
+
 		}
 	}
 }
