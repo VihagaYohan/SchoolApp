@@ -24,16 +24,19 @@ namespace SchoolApp.Controllers
 		private readonly RoleManager<IdentityRole> _roleManager;
 		private readonly AppDbContext _context;
 		private readonly IConfiguration _configuration;
+		private readonly TokenValidationParameters _tokenValidationParameters;
 
 		public AuthenticationController(UserManager<ApplicationUser> userManager,
 			RoleManager<IdentityRole> roleManager,
 			AppDbContext context,
-			IConfiguration configutation)
+			IConfiguration configutation,
+			TokenValidationParameters tokenValidationParameters)
 		{
 			this._userManager = userManager;
 			this._roleManager = roleManager;
 			this._context = context;
 			this._configuration = configutation;
+			this._tokenValidationParameters = tokenValidationParameters;
 		}
 
 		[HttpPost("register-user")]
