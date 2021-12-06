@@ -14,5 +14,7 @@ namespace SchoolApp.Data
 		{
 
 		}
+
+		public DbSet<RefreshToken> RefreshTokens { get; set; }
 	}
 }
