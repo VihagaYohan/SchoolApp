@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using SchoolApp.Data;
+using SchoolApp.Data.Helper;
 using SchoolApp.Data.Models;
 using SchoolApp.Data.ViewModels;
 using System;
@@ -64,6 +65,19 @@ namespace SchoolApp.Controllers
 			var result = await _userManager.CreateAsync(newUser, model.Password);
 			if (result.Succeeded)
 			{
+				// add user role
+				switch (model.Role) 
+				{
+					case UserRoles.Manager:
+						await _userManager.AddToRoleAsync(newUser, UserRoles.Manager);
+						break;
+					case UserRoles.Student:
+						await _userManager.AddToRoleAsync(newUser, UserRoles.Student);
+						break;
+					default:
+						break;
+				}
+
 				return Ok("User created");
 			}
 			else 
@@ -136,6 +150,13 @@ namespace SchoolApp.Controllers
 				new Claim(JwtRegisteredClaimNames.Sub,user.Email),
 				new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString())
 			};
+
+			// user role claims
+			var userRoles = await _userManager.GetRolesAsync(user);
+			foreach (var userRole in userRoles)
+			{
+				authClaims.Add(new Claim(ClaimTypes.Role, userRole));
+			}
 
 			var authSignInKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["JWT:Secret"]));
 
