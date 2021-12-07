@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using SchoolApp.Data.Helper;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +11,8 @@ namespace SchoolApp.Controllers
 {
 	[ApiController]
 	[Route("[controller]")]
-	[Authorize]
+	//[Authorize(Roles = UserRoles.Student)]
+	[Authorize(Roles = UserRoles.Student + ","+ UserRoles.Manager)]
 	public class WeatherForecastController : ControllerBase
 	{
 		private static readonly string[] Summaries = new[]
@@ -25,7 +27,9 @@ namespace SchoolApp.Controllers
 			_logger = logger;
 		}
 
-		[HttpGet]
+		[HttpGet("student")]
+		[Authorize(Roles = UserRoles.Student)]
+
 		public IEnumerable<WeatherForecast> Get()
 		{
 			var rng = new Random();
